@@ -1,11 +1,11 @@
 """
 title: Context stats and cost
 author: homelab
-version: 1.0.0
+version: 1.1.0
 type: filter
 active: true
 global: true
-description: Show per-message engine stats - prompt processing (prefill) rate and token count, generation rate, prefix-cache reuse, speculative-draft acceptance - plus an estimated cost that is 0.00 for any model not listed in the price table. Access is per user and off by default for non-admins; the admin turns it on for everyone, for named groups, or for individual users, and each metric including cost can be overridden per user. The line is appended to the assistant message for display and stripped again on the way upstream, so it never enters the model's context or the prefix cache.
+description: Show per-message engine stats - prompt processing (prefill) rate and token count, generation rate, prefix-cache reuse, speculative-draft acceptance - plus a cost: the exact figure a provider reports when it reports one, otherwise an estimate from the price table, and 0.00 for any model not listed. Access is per user and off by default for non-admins; the admin turns it on for everyone, for named groups, or for individual users, and each metric including cost can be overridden per user. The line is appended to the assistant message for display and stripped again on the way upstream, so it never enters the model's context or the prefix cache.
 """
 
 import json
@@ -314,11 +314,12 @@ class Filter:
         )
         return dollars, True
 
-    def _money(self, dollars):
+    def _money(self, dollars, estimated=False):
         if not dollars:
             return "$0.00"
         digits = max(2, min(int(self.valves.precision), 8))
-        return ("~$%%.%df" % digits) % dollars
+        # A provider-reported figure is exact, so only a price-table result gets the tilde.
+        return ("~$" if estimated else "$") + (("%%.%df" % digits) % dollars)
 
     # ------------------------------------------------------------- rendering
 
@@ -362,8 +363,8 @@ class Filter:
             except (TypeError, ValueError, ZeroDivisionError):
                 pass
         if settings.get("show_cost"):
-            dollars, _ = self._cost(model_id, usage, images)
-            parts.append(self._money(dollars))
+            dollars, estimated = self._cost(model_id, usage, images)
+            parts.append(self._money(dollars, estimated))
         if not parts:
             return None
         return SENTINEL + " \u00b7 ".join(parts)

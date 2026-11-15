@@ -132,6 +132,19 @@ check("provider-reported cost wins", f._cost("anthropic/claude-sonnet-5", provid
 
 check("unlisted model is free", f._cost("mystery-model", USAGE_LOCAL, 0), (0.0, False))
 
+# A provider-reported cost is exact, so it must not carry the estimate tilde; a table-derived
+# figure must keep it. Both are rendered through the same _money() call.
+check("_money marks only estimates", (f._money(0.5, True), f._money(0.5, False)), ("~$0.5000", "$0.5000"))
+
+provider_line = f._line(provider, "anthropic/claude-sonnet-5", 0)
+print("  provider:", provider_line)
+check("provider cost renders exact amount", provider_line.rstrip().endswith("$0.0123"), True)
+check("provider cost has no tilde", "~$" in provider_line, False)
+
+estimate_line = f._line(USAGE_LOCAL, "anthropic/claude-sonnet-5", 0)
+print("  estimate:", estimate_line)
+check("table estimate keeps tilde", "~$" in estimate_line, True)
+
 print("== strip round-trip ==")
 body = {
     "messages": [

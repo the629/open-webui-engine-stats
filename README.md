@@ -13,7 +13,7 @@ actually ran:
 | **decode** | generation rate and how many tokens were generated |
 | **cached** | prefix-cache reuse, plus how long a restore took |
 | **draft** | speculative-draft acceptance (MTP) |
-| **$** | cost estimate; `$0.00` for anything not in the price table, which is what a local model gets with no configuration |
+| **$** | cost: the provider's own figure when it reports one, printed exactly; otherwise an estimate from the price table, marked with `~`. `$0.00` for anything not in the table, which is what a local model gets with no configuration |
 
 ## Why not just tokens ÷ seconds?
 
@@ -57,7 +57,8 @@ The file's docstring carries the metadata Open WebUI's importer reads (`title`, 
 | `debug` | Log the resolved per-user settings to the container log. |
 
 A provider that reports its own `cost` wins over the estimate, so a gateway that already knows the price is
-authoritative.
+authoritative. Because that figure is exact it is printed without the `~` prefix — only a number derived from
+the price table carries the tilde, so you can tell at a glance which one you are looking at.
 
 ## Access policy
 
@@ -118,7 +119,7 @@ the engine's checkpoint reuse misses. Measured on the deployment this was writte
 python3 test_context_stats.py
 ```
 
-59 checks, standard library only, no Open WebUI and no pydantic required — a two-class stub stands in for
+62 checks, standard library only, no Open WebUI and no pydantic required — a two-class stub stands in for
 pydantic so the rendering, cost arithmetic, strip round-trip, and the whole access-policy resolver can be
 exercised anywhere, including Windows. That is deliberate: a function that silently stops rendering is the
 failure mode worth guarding against, and it should be testable without standing up a container.
